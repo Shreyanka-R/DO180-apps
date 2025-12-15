@@ -1693,6 +1693,8 @@ fi
 # ----------------------------------------------------------
 # CHECK 27: Locate world-readable dump / export files
 # ----------------------------------------------------------
+CHECK_ID=27
+if should_run_check "$CHECK_ID"; then
 CHECK="Dump / Export Files Presence"
 EXPECTED="Dump/export files must be owned by oracle and must not be world-readable"
 CMD='find / -type f \( -name "*.dmp" -o -name "*.sql" -o -name "*.exp" -o -name "*.csv" \) \
@@ -1724,10 +1726,13 @@ Output:
 ${DUMP_FILES_OUT:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 28: Dump files in insecure locations (/tmp, /var/tmp)
 # ----------------------------------------------------------
+CHECK_ID=28
+if should_run_check "$CHECK_ID"; then
 CHECK="Dump Files in Insecure Locations"
 EXPECTED="No dump/export files should exist in /tmp or /var/tmp"
 CMD="find /tmp /var/tmp -type f \( -name \"*.dmp\" -o -name \"*.sql\" -o -name \"*.exp\" \) 2>/dev/null"
@@ -1753,10 +1758,13 @@ Output:
 ${TMP_DUMP_OUT:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 29: Dump directory permissions and ownership
 # ----------------------------------------------------------
+CHECK_ID=29
+if should_run_check "$CHECK_ID"; then
 DUMP_DIR="/u01/dumpfiles"
 CHECK="Dump Directory Permissions and Ownership"
 EXPECTED="Dump directory should be owned by DB user and permission should be 700"
@@ -1805,10 +1813,13 @@ fi
 
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 30: Encrypted exports usage
 # ----------------------------------------------------------
+CHECK_ID=30
+if should_run_check "$CHECK_ID"; then
 CHECK="Encrypted Exports"
 EXPECTED="Exports should use encryption (ENCRYPTION=ALL or equivalent)"
 CMD="find /u01 /opt /home /etc -type f \( -name "*.sh" -o -name "*.par" \) -exec grep -H "expdp" {} \; 2>/dev/null | grep -vi "ENCRYPTION=ALL" "
@@ -1836,10 +1847,13 @@ Sample output:
 ${ENCRYPT_OUT:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+30
 
 # ----------------------------------------------------------
 # CHECK 31: Audit logs for dump file access
 # ----------------------------------------------------------
+CHECK_ID=31
+if should_run_check "$CHECK_ID"; then
 CHECK="File Copy / Move / Delete Activity Logging"
 EXPECTED="File operations should be logged via auditd. If auditd is unavailable, alternative logs must be reviewed."
 TARGET_DIR="/u01/dumpfiles"
@@ -1898,10 +1912,13 @@ fi
 
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 32: Secure deletion guidance
 # ----------------------------------------------------------
+CHECK_ID=32
+if should_run_check "$CHECK_ID"; then
 CHECK="Secure Deletion of Dump Files"
 EXPECTED="Sensitive dump files should be securely deleted (shred/srm)"
 STATUS="REVIEW"
@@ -1911,11 +1928,13 @@ OBS="$SUMMARY
 Recommended (not executed):
 shred -u <sensitive_dump_file>.dmp"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
-
+fi
 
 # ----------------------------------------------------------
 # CHECK 33: auditd rule for dump file monitoring
 # ----------------------------------------------------------
+CHECK_ID=33
+if should_run_check "$CHECK_ID"; then
 CHECK="Auditd Rule for Dump File Monitoring"
 EXPECTED="Audit rules should monitor creation and access of dump files"
 STATUS="REVIEW"
@@ -1927,10 +1946,13 @@ Recommended rule (not applied):
 auditctl -w $DUMP_DIR -p rwxa -k dump_access"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 34: Root Home Directory Files & Permissions
 # ----------------------------------------------------------
+CHECK_ID=34
+if should_run_check "$CHECK_ID"; then
 CHECK="Root Home Directory Files & Permissions"
 EXPECTED="Root home directory files must have secure permissions (400 or 600) and root home must not be accessible to non-root users"
 STATUS="PASS"
@@ -2003,10 +2025,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 35: Umask Configuration
 # ----------------------------------------------------------
+CHECK_ID=35
+if should_run_check "$CHECK_ID"; then
 CHECK="Umask Configuration"
 EXPECTED="System-wide and user umask values should be secure (027 recommended, 022 acceptable, 077 only if justified)"
 STATUS="PASS"
@@ -2090,10 +2115,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi 
 
 # ----------------------------------------------------------
 # CHECK 36: Password Policy and Authentication Controls
 # ----------------------------------------------------------
+CHECK_ID=36
+if should_run_check "$CHECK_ID"; then
 CHECK="Password Policy and Authentication Controls"
 EXPECTED="Password aging, complexity, lockout, and history controls should align with security policy"
 STATUS="PASS"
@@ -2227,10 +2255,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 37: Restrict Root Login and Privileged Access
 # ----------------------------------------------------------
+CHECK_ID=37
+if should_run_check "$CHECK_ID"; then
 CHECK="Restrict Root Login and Privileged Access"
 EXPECTED="Root login must be restricted, only authorized users may use su, and privileged access must be logged"
 STATUS="PASS"
@@ -2353,10 +2384,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 38: User and Group Management Review
 # ----------------------------------------------------------
+CHECK_ID=38
+if should_run_check "$CHECK_ID"; then
 CHECK="User and Group Management Review"
 EXPECTED="User and group configuration must align with documented policies; administrator access must be limited and appropriate"
 STATUS="REVIEW"
@@ -2443,10 +2477,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 39: Logical Access Monitoring
 # ----------------------------------------------------------
+CHECK_ID=39
+if should_run_check "$CHECK_ID"; then
 CHECK="Logical Access Monitoring"
 EXPECTED="Logical access must be monitored regularly with documented review procedures"
 STATUS="REVIEW"
@@ -2518,11 +2555,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
-
+fi
 
 # ----------------------------------------------------------
 # CHECK 40: Logical Access Segregation of Duties
 # ----------------------------------------------------------
+CHECK_ID=40
+if should_run_check "$CHECK_ID"; then
 CHECK="Logical Access Segregation of Duties"
 EXPECTED="Access request, approval, provisioning, and monitoring duties must be segregated and privileged access restricted"
 STATUS="REVIEW"
@@ -2609,10 +2648,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 41: Root Access Review
 # ----------------------------------------------------------
+CHECK_ID=41
+if should_run_check "$CHECK_ID"; then
 CHECK="Root Access Review"
 EXPECTED="Access to the root account is restricted to authorized administrators and is monitored"
 STATUS="REVIEW"
@@ -2665,10 +2707,13 @@ Comprehensive historical review should be performed using centralized logging or
 $CMDS_EXECUTED"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 42: Physical Security – Data Center Access
 # ----------------------------------------------------------
+CHECK_ID=42
+if should_run_check "$CHECK_ID"; then
 CHECK="Physical Security – Data Center Access"
 EXPECTED="Physical access to the data center is restricted to authorized personnel only"
 STATUS="REVIEW"
@@ -2690,10 +2735,13 @@ ${PASSWD_SAMPLE:-<not available>}
 $CMDS_EXECUTED"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 43: Generic Accounts Review
 # ----------------------------------------------------------
+CHECK_ID=43
+if should_run_check "$CHECK_ID"; then
 CHECK="Generic Accounts Review"
 EXPECTED="Generic accounts are restricted, approved, monitored, and appropriately managed"
 
@@ -2743,10 +2791,13 @@ Any generic accounts identified must have:
 $CMDS_EXECUTED"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 44: Group Membership Review
 # ----------------------------------------------------------
+CHECK_ID=44
+if should_run_check "$CHECK_ID"; then
 CHECK="Group Membership Review"
 EXPECTED="Group memberships are appropriate, approved, and aligned with job responsibilities"
 CMDS_EXECUTED="Commands executed:
@@ -2784,10 +2835,13 @@ Any exceptions or elevated access should be supported by documented business jus
 $CMDS_EXECUTED"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 45: Kernel Network Hardening (sysctl)
 # ----------------------------------------------------------
+CHECK_ID=45
+if should_run_check "$CHECK_ID"; then
 CHECK="Kernel Network Hardening"
 EXPECTED="Critical kernel network parameters must be explicitly hardened as per security baseline"
 STATUS="PASS"
@@ -2820,10 +2874,13 @@ Findings:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 46: Firewall Rules Validation
 # ----------------------------------------------------------
+CHECK_ID=46
+if should_run_check "$CHECK_ID"; then
 CHECK="Firewall Rules Validation"
 EXPECTED="Firewall service must be active and explicitly configured with restrictive rules"
 STATUS="PASS"
@@ -2850,10 +2907,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 47: Account Lockout Policy (faillock)
 # ----------------------------------------------------------
+CHECK_ID=47
+if should_run_check "$CHECK_ID"; then
 CHECK="Account Lockout Policy"
 EXPECTED="User accounts must be locked after defined consecutive authentication failures"
 STATUS="PASS"
@@ -2869,10 +2929,13 @@ fi
 
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 48: Inactive / Never Logged-In Users
 # ----------------------------------------------------------
+CHECK_ID=48
+if should_run_check "$CHECK_ID"; then
 CHECK="Inactive or Never Logged-In Users"
 EXPECTED="Inactive or unused user accounts must be reviewed and removed"
 STATUS="PASS"
@@ -2891,10 +2954,13 @@ fi
 
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 49: World Writable Files
 # ----------------------------------------------------------
+CHECK_ID=49
+if should_run_check "$CHECK_ID"; then
 CHECK="World Writable Files"
 EXPECTED="System files must not have world-writable permissions"
 STATUS="PASS"
@@ -2912,10 +2978,13 @@ fi
 
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 50: Cron and At Access Control
 # ----------------------------------------------------------
+CHECK_ID=50
+if should_run_check "$CHECK_ID"; then
 CHECK="Cron and At Access Control"
 EXPECTED="Only authorized users should be permitted to schedule cron and at jobs"
 STATUS="PASS"
@@ -2936,10 +3005,13 @@ Details:
 ${DETAILS:-cron.allow and at.allow files are present}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 51: Core Dumps
 # ----------------------------------------------------------
+CHECK_ID=51
+if should_run_check "$CHECK_ID"; then
 CHECK="Core Dumps"
 EXPECTED="Core dumps must be disabled to prevent sensitive data exposure"
 STATUS="PASS"
@@ -2956,10 +3028,13 @@ fi
 
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 52: IPv6 Configuration
 # ----------------------------------------------------------
+CHECK_ID=52
+if should_run_check "$CHECK_ID"; then
 CHECK="IPv6 Configuration"
 EXPECTED="IPv6 should be disabled if not required for business use"
 STATUS="PASS"
@@ -2976,6 +3051,7 @@ fi
 
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 # -------------------------
 # Done: print CSV path (console only)
 # -------------------------
