@@ -16,6 +16,41 @@ csv_escape() { printf '%s' "$1" | sed 's/\"/\"\"/g'; }
 SYSTEM_DETAILS="Hostname=$HOST | HostIP=$HOST_IP | OS=$OS_NAME | Mode=$MODE | Timestamp=$TIMESTAMP"
 
 # =============================================================
+# AUDIT EXECUTION CONTROL
+# =============================================================
+# Usage examples:
+#   ./linux_audit.sh                  -> Run ALL checks
+#   ./linux_audit.sh 1,3,5            -> Run only checks 1,3,5
+#   ./linux_audit.sh 10-20            -> Run checks 10 to 20
+#
+# Check numbers must match CHECK IDs in script
+# =============================================================
+ 
+RUN_CHECKS="${1:-ALL}"
+ 
+should_run_check() {
+  local check_id="$1"
+ 
+  if [ "$RUN_CHECKS" = "ALL" ]; then
+    return 0
+  fi
+ 
+  # Handle comma-separated list: 1,3,5
+  if echo "$RUN_CHECKS" | grep -q ","; then
+    echo "$RUN_CHECKS" | tr ',' '\n' | grep -qx "$check_id" && return 0
+  fi
+ 
+  # Handle range: 10-20
+  if echo "$RUN_CHECKS" | grep -q "-"; then
+    local start="${RUN_CHECKS%-*}"
+    local end="${RUN_CHECKS#*-}"
+    [ "$check_id" -ge "$start" ] && [ "$check_id" -le "$end" ] && return 0
+  fi
+ 
+  return 1
+}
+
+# =============================================================
 # CSV HEADER
 # =============================================================
 printf '"%s","%s","%s","%s","%s","%s","%s","%s","%s"\n' \
@@ -88,6 +123,9 @@ echo -e "${BLUE}Starting Linux Security Audit...${RESET}"
 # ----------------------------------------------------------
 # CHECK 1: Use of Shadow Password File
 # ----------------------------------------------------------
+CHECK_ID=1
+if should_run_check "$CHECK_ID"; then
+
 CHECK="Use of Shadow Password File"
 EXPECTED="Passwords must not be stored in /etc/passwd and permissions on /etc/passwd and /etc/shadow must be secure"
 STATUS="PASS"
@@ -177,10 +215,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 2: System Accounts Password Lock and NIS Usage
 # ----------------------------------------------------------
+CHECK_ID=2
+if should_run_check "$CHECK_ID"; then
 CHECK="System Accounts Password Lock and NIS Usage"
 EXPECTED="System accounts must be locked and NIS must not be installed, enabled, or configured unless explicitly required"
 STATUS="PASS"
@@ -281,10 +322,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 3: Trusted Host Access (/etc/hosts.equiv)
 # ----------------------------------------------------------
+CHECK_ID=3
+if should_run_check "$CHECK_ID"; then
 CHECK="Trusted Host Access (/etc/hosts.equiv)"
 EXPECTED="/etc/hosts.equiv must not allow broad trust; if present it must be owned by root, permission 600, and contain only specific trusted entries"
 STATUS="PASS"
@@ -385,10 +429,12 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
-
+fi
 # -------------------------
 # CHECK 4: Listening ports
 # -------------------------
+CHECK_ID=4
+if should_run_check "$CHECK_ID"; then
 CHECK="Listening Network Ports"
 EXPECTED="No service should listen on port 21 (FTP) or 23 (Telnet)"
 CMD="ss -tuln"
@@ -414,13 +460,15 @@ Full output:
 $OUT"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS\n$OUT" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 5: Remote Trusted Services (rlogin, rsh, rexec)
 # ----------------------------------------------------------
+CHECK_ID=5
+if should_run_check "$CHECK_ID"; then
 CHECK="Remote Trusted Services (rlogin, rsh, rexec)"
 EXPECTED="Remote trusted services must be disabled or strictly restricted"
-
 SUMMARY=""
 DETAILS=""
 STATUS="PASS"
@@ -511,10 +559,12 @@ $DETAILS"
 
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
-
+fi
 # -------------------------
 # CHECK 6: Telnet
 # -------------------------
+CHECK_ID=6
+if should_run_check "$CHECK_ID"; then
 CHECK="Telnet Service"
 EXPECTED="No telnetd process and no listener on port 23"
 CMD1="ps aux | grep -Ei 'telnetd|in.telnetd' | grep -v grep"
@@ -550,10 +600,13 @@ ss -tuln (filtered):
 ${PORT23:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS/PROC_OUT" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # -------------------------
 # CHECK 7: RSH
 # -------------------------
+CHECK_ID=7
+if should_run_check "$CHECK_ID"; then
 CHECK="RSH Service"
 EXPECTED="No rshd process and no listener on port 514"
 CMD1="ps aux | grep -Ei 'rshd|in.rshd' | grep -v grep"
@@ -587,10 +640,13 @@ ss -tuln (filtered):
 ${PORT514:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # -------------------------
 # CHECK 8: FTP
 # -------------------------
+CHECK_ID=8
+if should_run_check "$CHECK_ID"; then
 CHECK="FTP Service"
 EXPECTED="No FTP daemon (vsftpd/proftpd/pure-ftpd) and no listener on port 21"
 CMD1="ps aux | grep -Ei 'vsftpd|proftpd|pure-ftpd' | grep -v grep"
@@ -624,10 +680,13 @@ ss -tuln (filtered):
 ${PORT21:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 9: Anonymous Login to FTP
 # ----------------------------------------------------------
+CHECK_ID=9
+if should_run_check "$CHECK_ID"; then
 CHECK="Anonymous Login to FTP"
 EXPECTED="Anonymous FTP login must be disabled and FTP access must be restricted"
 STATUS="PASS"
@@ -733,10 +792,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 10: Restricted Users and FTP Access Control
 # ----------------------------------------------------------
+CHECK_ID=10
+if should_run_check "$CHECK_ID"; then
 CHECK="Restricted Users and FTP Access Control"
 EXPECTED="Restricted system users must not have login shells and must be denied FTP access"
 STATUS="PASS"
@@ -848,10 +910,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 11: SSH Service Status
 # ----------------------------------------------------------
+CHECK_ID=11
+if should_run_check "$CHECK_ID"; then
 CHECK="SSH Service Status"
 EXPECTED="SSH service should be active (running) and enabled at boot"
 SERVICE_UNIT=""
@@ -910,10 +975,13 @@ Service enabled status:
 $SERVICE_ENABLED"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi 
 
 # -------------------------
 # CHECK 12: PermitRootLogin
 # -------------------------
+CHECK_ID=12
+if should_run_check "$CHECK_ID"; then
 CHECK="PermitRootLogin"
 EXPECTED="PermitRootLogin in /etc/ssh/sshd_config should be 'no'"
 CMD="grep -E "^#?PermitRootLogin" /etc/ssh/sshd_config || true"
@@ -935,10 +1003,13 @@ Output:
 ${PRL_OUT:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi 
 
 # -------------------------
 # CHECK 13: Trust files
 # -------------------------
+CHECK_ID=13
+if should_run_check "$CHECK_ID"; then
 CHECK="Trust Files (.rhosts .shosts hosts.equiv)"
 EXPECTED="No trust files should exist under / (maxdepth 5)"
 CMD="find / -name '.rhosts' -o -name '.shosts' -o -name 'hosts.equiv' 2>/dev/null || true"
@@ -960,10 +1031,13 @@ Output:
 ${FILES_OUT:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # -------------------------
 # CHECK 14: /etc/shadow permissions
 # -------------------------
+CHECK_ID=14
+if should_run_check "$CHECK_ID"; then
 CHECK="/etc/shadow File Permissions"
 EXPECTED="/etc/shadow should be owned by root:shadow with permission 640"
 CMD="ls -l /etc/shadow"
@@ -997,10 +1071,13 @@ Permissions: $PERM
 Owner: $OWNER"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # -------------------------
 # CHECK 15: Password aging policy (users)
 # -------------------------
+CHECK_ID=15
+if should_run_check "$CHECK_ID"; then
 CHECK="Password Aging Policy"
 EXPECTED="Maximum password age should be defined (≤ 90 days recommended)"
 AGING_ISSUES=""
@@ -1040,10 +1117,13 @@ Issues:
 ${AGING_ISSUES:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 16: Monitoring of User Access and New User Validation
 # ----------------------------------------------------------
+CHECK_ID=16
+if should_run_check "$CHECK_ID"; then
 CHECK="Monitoring of User Access and New User Validation"
 EXPECTED="User account creation and modifications must be monitored, approved, and aligned with job roles as per policy"
 STATUS="REVIEW"
@@ -1115,10 +1195,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 17: User Group Membership Review
 # ----------------------------------------------------------
+CHECK_ID=17
+if should_run_check "$CHECK_ID"; then
 CHECK="User Group Membership Review"
 EXPECTED="Only authorized administrators may belong to sensitive system groups"
 STATUS="PASS"
@@ -1211,11 +1294,13 @@ Details:
 $DETAILS"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
-
+fi
 
 # -------------------------
 # CHECK 18: System startup script permissions
 # -------------------------
+CHECK_ID=18
+if should_run_check "$CHECK_ID"; then
 CHECK="System Startup Script Permissions"
 EXPECTED="Startup scripts must be owned by root and not writable by group/others"
 ISSUES=""
@@ -1258,10 +1343,13 @@ Issues:
 ${ISSUES:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # -------------------------
 # CHECK 19: User shell startup files
 # -------------------------
+CHECK_ID=19
+if should_run_check "$CHECK_ID"; then
 CHECK="User Shell Startup File Permissions"
 EXPECTED="Shell startup files should be 644 or stricter and owned by user"
 ISSUES=""
@@ -1301,10 +1389,13 @@ Issues:
 ${ISSUES:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # -------------------------
 # CHECK 20: Current session umask
 # -------------------------
+CHECK_ID=20
+if should_run_check "$CHECK_ID"; then
 CHECK="Current Session Umask"
 EXPECTED="Umask should be 027 or stricter (avoid 002 or 022)"
 CMD="umask"
@@ -1331,10 +1422,13 @@ Output:
 $SESSION_UMASK"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi 
 
 # -------------------------
 # CHECK 21: System-wide default umask (/etc/login.defs)
 # -------------------------
+CHECK_ID=21
+if should_run_check "$CHECK_ID"; then
 CHECK="System-wide Default Umask"
 EXPECTED="UMASK in /etc/login.defs should be set to 027"
 CMD="grep -E '^UMASK' /etc/login.defs 2>/dev/null || true"
@@ -1360,10 +1454,13 @@ Output:
 ${LOGIN_DEFS_UMASK:-<not set>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # -------------------------
 # CHECK 22: Umask overrides in shell configuration
 # -------------------------
+CHECK_ID=22
+if should_run_check "$CHECK_ID"; then
 CHECK="Global Umask Overrides"
 EXPECTED="Shell config files should not override umask with weak values"
 CMD1="grep -R \"umask\" /etc/profile /etc/bashrc 2>/dev/null || true"
@@ -1392,10 +1489,13 @@ Detected umask entries:
 ${SHELL_UMASKS:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # -------------------------
 # CHECK 23: Skeleton directory permissions (/etc/skel)
 # -------------------------
+CHECK_ID=23
+if should_run_check "$CHECK_ID"; then
 CHECK="Skeleton Directory Permissions"
 EXPECTED="Files in /etc/skel should not be world-writable"
 CMD="ls -l /etc/skel 2>/dev/null || true"
@@ -1423,10 +1523,13 @@ World-writable files:
 ${WORLD_WRITABLE:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 24: SUID and SGID binaries
 # ----------------------------------------------------------
+CHECK_ID=24
+if should_run_check "$CHECK_ID"; then
 CHECK="SUID and SGID Binaries"
 EXPECTED="Only required binaries should have SUID/SGID permissions"
 CMD="find / -type f \( -perm -4000 -o -perm -2000 \) -exec ls -l {} \; 2>/dev/null"
@@ -1452,10 +1555,13 @@ Output:
 ${SUID_OUT:-<none>}"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi 
 
 # ----------------------------------------------------------
 # CHECK 25: sudo and wheel group members
 # ----------------------------------------------------------
+CHECK_ID=25
+if should_run_check "$CHECK_ID"; then
 CHECK="sudo and wheel Group Membership"
 EXPECTED="Only authorized administrators should belong to sudo or wheel groups"
 SUDO_GRP="$(grep '^sudo:' /etc/group 2>/dev/null || true)"
@@ -1471,10 +1577,13 @@ STATUS="REVIEW"
 REM="Verify that only authorized administrators are members"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 26: Multiple UID 0 accounts
 # ----------------------------------------------------------
+CHECK_ID=26
+if should_run_check "$CHECK_ID"; then
 CHECK="Multiple UID 0 Accounts"
 EXPECTED="Only the root account should have UID 0"
 CMD="awk -F: '\$3 == 0 { print \$1 }' /etc/passwd"
@@ -1501,6 +1610,7 @@ Accounts with UID 0:
 $UID0_OUT"
 add_audit_row "$CHECK" "$EXPECTED" "$OBS" "$STATUS" "$REM"
 echo -e "${BLUE}${CHECK}:${RESET} ${STATUS}"
+fi
 
 # ----------------------------------------------------------
 # CHECK 27: Locate world-readable dump / export files
