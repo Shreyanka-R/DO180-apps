@@ -25,22 +25,90 @@ SYSTEM_DETAILS="Hostname=$HOST | HostIP=$HOST_IP | OS=$OS_NAME | Mode=$MODE | Ti
 #
 # Check numbers must match CHECK IDs in script
 # =============================================================
+
+# =============================================================
+# AUDIT CHECK CATALOG
+# =============================================================
+declare -A CHECK_CATALOG=(
+  [1]="Use of Shadow Password File"
+  [2]="System Accounts Password Lock and NIS Usage"
+  [3]="Trusted Host Access (/etc/hosts.equiv)"
+  [4]="Listening Network Ports (FTP/Telnet)"
+  [5]="Remote Trusted Services (rlogin, rsh, rexec)"
+  [6]="Telnet Service Status"
+  [7]="RSH Service Status"
+  [8]="FTP Service Status"
+  [9]="Anonymous Login to FTP"
+  [10]="Restricted Users and FTP Access Control"
+  [11]="SSH Service Status"
+  [12]="PermitRootLogin"
+  [13]="Trust Files (.rhosts .shosts hosts.equiv)"
+  [14]="/etc/shadow File Permissions"
+  [15]="Password Aging Policy"
+  [16]="Monitoring of User Access and New User Validation"
+  [17]="User Group Membership Review"
+  [18]="System Startup Script Permissions"
+  [19]="User Shell Startup File Permissions"
+  [20]="Current Session Umask"
+  [21]="System-wide Default Umask"
+  [22]="Global Umask Overrides"
+  [23]="Skeleton Directory Permissions"
+  [24]="SUID and SGID Binaries"
+  [25]="sudo and wheel Group Membership"
+  [26]="Multiple UID 0 Accounts"
+  [27]="Dump / Export Files Presence"
+  [28]="Dump Files in Insecure Locations"
+  [29]="Dump Directory Permissions and Ownership"
+  [30]="Encrypted Exports"
+  [31]="File Copy / Move / Delete Activity Logging"
+  [32]="Secure Deletion of Dump Files"
+  [33]="Auditd Rule for Dump File Monitoring"
+  [34]="Root Home Directory Files & Permissions"
+  [35]="Logical Access Monitoring"
+  [36]="Password Policy and Authentication Controls"
+  [37]="Restrict Root Login and Privileged Access"
+  [38]="User and Group Management Review"
+  [39]="Logical Access Monitoring"
+  [40]="Inactive or Never Logged-In Users"
+  [41]="Root Access Review"
+  [42]="Physical Security – Data Center Access"
+  [43]="Generic Accounts Review"
+  [44]="Group Membership Review"
+  [45]="Kernel Network Hardening"
+  [46]="Firewall Rules Validation"
+  [47]="Account Lockout Policy"
+  [48]="Inactive or Never Logged-In Users"
+  [49]="World Writable Files"
+  [50]="Cron and At Access Control"
+  [51]="Core Dumps"
+  [52]="IPv6 Configuration"
+)
+
+print_available_checks() {
+  echo -e "\nAvailable Audit Checks:"
+  echo "--------------------------------------------------"
+  for id in $(printf "%s\n" "${!CHECK_CATALOG[@]}" | sort -n); do
+    printf "  %2d) %s\n" "$id" "${CHECK_CATALOG[$id]}"
+  done
+  echo "--------------------------------------------------"
+  echo "Input examples:"
+  echo "  ALL        → Run all checks"
+  echo "  1,3,5      → Run specific checks"
+  echo "  10-20     → Run range of checks"
+  echo
+}
  
 RUN_CHECKS="${1:-ALL}"
  
 should_run_check() {
   local check_id="$1"
  
-  if [ "$RUN_CHECKS" = "ALL" ]; then
-    return 0
-  fi
+  [ "$RUN_CHECKS" = "ALL" ] && return 0
  
-  # Handle comma-separated list: 1,3,5
   if echo "$RUN_CHECKS" | grep -q ","; then
     echo "$RUN_CHECKS" | tr ',' '\n' | grep -qx "$check_id" && return 0
   fi
  
-  # Handle range: 10-20
   if echo "$RUN_CHECKS" | grep -q "-"; then
     local start="${RUN_CHECKS%-*}"
     local end="${RUN_CHECKS#*-}"
@@ -119,6 +187,16 @@ add_audit_row() {
 CMD_OUT=""
 run_cmd() { CMD_OUT=$(sh -c "$1" 2>/dev/null || true); }
 echo -e "${BLUE}Starting Linux Security Audit...${RESET}"
+
+#=============================================================
+# AUDIT EXECUTION MODE – INTERACTIVE
+# =============================================================
+print_available_checks
+ 
+read -rp "Enter audit check selection [ALL / 1,3,5 / 10-20]: " RUN_CHECKS
+RUN_CHECKS="${RUN_CHECKS:-ALL}"
+ 
+echo -e "\nAudit scope selected: ${RUN_CHECKS}\n"
 
 # ----------------------------------------------------------
 # CHECK 1: Use of Shadow Password File
